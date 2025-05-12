@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { getStorage, ref, uploadBytesResumable, getDownloadURL, listAll } from 'firebase/storage';
+import { getStorage, ref, uploadBytesResumable, getDownloadURL, listAll, getMetadata } from 'firebase/storage';
 import { auth } from '../firebase';
+import PDFThumbnail from './PDFThumbnail';
 
 const PDFUpload = () => {
   const [pdfFile, setPdfFile] = useState(null);
@@ -25,10 +26,12 @@ const PDFUpload = () => {
       const pdfs = await Promise.all(
         res.items.map(async (itemRef) => {
           const url = await getDownloadURL(itemRef);
+          const metadata = await getMetadata(itemRef);
           return {
             name: itemRef.name,
             url,
-            path: itemRef.fullPath
+            path: itemRef.fullPath,
+            uploadedAt: metadata.customMetadata?.uploadedAt || metadata.timeCreated,
           };
         })
       );
@@ -63,7 +66,12 @@ const PDFUpload = () => {
       if (!user) throw new Error('User not authenticated');
 
       const storageRef = ref(storage, `pdfs/${user.uid}/${pdfFile.name}`);
-      const uploadTask = uploadBytesResumable(storageRef, pdfFile);
+      const metadata = {
+        customMetadata: {
+          uploadedAt: new Date().toISOString(),
+        },
+      };
+      const uploadTask = uploadBytesResumable(storageRef, pdfFile, metadata);
       uploadTask.on('state_changed',
         (snapshot) => {
           // Optional: track progress
@@ -142,23 +150,27 @@ const PDFUpload = () => {
       </div>
 
       {/* PDF List */}
-      <div className="bg-white rounded-lg shadow-lg p-6">
+      <div className="bg-white rounded-lg shadow-lg p-10">
         <h2 className="text-2xl font-bold text-gray-800 mb-4">Your PDFs</h2>
         {pdfList.length === 0 ? (
           <p className="text-gray-500 text-center py-4">No PDFs uploaded yet</p>
         ) : (
-          <div className="space-y-4">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
             {pdfList.map((pdf) => (
-              <div key={pdf.path} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                <span className="text-sm text-gray-600">{pdf.name}</span>
-                <a
-                  href={pdf.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2"
+              <div key={pdf.path} className="flex flex-col items-center bg-gray-50 rounded-lg p-4 shadow">
+                <div
+                  className="cursor-pointer"
+                  onClick={() => window.open(pdf.url, '_blank')}
+                  title="Click to view PDF"
                 >
-                  View PDF
-                </a>
+                  <PDFThumbnail url={pdf.url} />
+                </div>
+                <div className="mt-2 text-center">
+                  <div className="font-semibold w-full text-sm overflow-auto truncate">{pdf.name}</div>
+                  <div className="text-xs text-gray-500">
+                    {pdf.uploadedAt ? new Date(pdf.uploadedAt).toLocaleString() : ''}
+                  </div>
+                </div>
               </div>
             ))}
           </div>
