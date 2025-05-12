@@ -12,11 +12,34 @@ const ProtectedRoute = ({ children }) => {
   const [user, loading] = useAuthState(auth);
 
   if (loading) {
-    return <div>Loading...</div>;
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-xl text-gray-600">Loading...</div>
+      </div>
+    );
   }
 
   if (!user) {
-    return <Navigate to="/login" />;
+    return <Navigate to="/login" replace />;
+  }
+
+  return children;
+};
+
+// Public Route component (for login page)
+const PublicRoute = ({ children }) => {
+  const [user, loading] = useAuthState(auth);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-xl text-gray-600">Loading...</div>
+      </div>
+    );
+  }
+
+  if (user) {
+    return <Navigate to="/dashboard" replace />;
   }
 
   return children;
@@ -26,18 +49,30 @@ function App() {
   return (
     <Router>
       <div className="min-h-screen bg-gray-100">
-        <Navbar />
         <Routes>
-          <Route path="/login" element={<Login />} />
+          <Route
+            path="/login"
+            element={
+              <PublicRoute>
+                <Login />
+              </PublicRoute>
+            }
+          />
           <Route
             path="/dashboard"
             element={
               <ProtectedRoute>
-                <Dashboard />
+                <>
+                  <Navbar />
+                  <Dashboard />
+                </>
               </ProtectedRoute>
             }
           />
-          <Route path="/" element={<Navigate to="/dashboard" />} />
+          <Route
+            path="/"
+            element={<Navigate to="/dashboard" replace />}
+          />
         </Routes>
       </div>
     </Router>

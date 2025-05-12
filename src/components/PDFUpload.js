@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { getStorage, ref, uploadBytes, getDownloadURL, listAll } from 'firebase/storage';
+import { getStorage, ref, uploadBytesResumable, getDownloadURL, listAll } from 'firebase/storage';
 import { auth } from '../firebase';
 
 const PDFUpload = () => {
@@ -63,9 +63,28 @@ const PDFUpload = () => {
       if (!user) throw new Error('User not authenticated');
 
       const storageRef = ref(storage, `pdfs/${user.uid}/${pdfFile.name}`);
-      await uploadBytes(storageRef, pdfFile);
+      const uploadTask = uploadBytesResumable(storageRef, pdfFile);
+      uploadTask.on('state_changed',
+        (snapshot) => {
+          // Optional: track progress
+          const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+          console.log(`Upload is ${progress}% done`);
+        },
+        (error) => {
+          console.error('Upload failed:', error);
+          setError('Upload failed');
+          setUploading(false);
+        },
+        async () => {
+          const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
+          console.log('File available at', downloadURL);
+          await fetchPdfList(); // Reload PDF list
+          setPdfFile(null);
+          setError('');
+          setUploading(false);
+        }
+      );
       
-      // Refresh the PDF list
       await fetchPdfList();
       
       setPdfFile(null);

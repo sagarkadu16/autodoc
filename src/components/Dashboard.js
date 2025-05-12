@@ -6,15 +6,6 @@ import PDFUpload from './PDFUpload';
 const Dashboard = () => {
   const navigate = useNavigate();
 
-  const handleSignOut = async () => {
-    try {
-      await auth.signOut();
-      navigate('/login');
-    } catch (error) {
-      console.error('Error signing out:', error);
-    }
-  };
-
   return (
     <div className="min-h-screen bg-gray-100">
       <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">

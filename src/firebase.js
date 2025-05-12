@@ -6,11 +6,11 @@ const firebaseConfig = {
     apiKey: "AIzaSyCklDzWvsafDpg2jIc4GiMm9zbm-T8RCIM",
     authDomain: "autodoc-9a334.firebaseapp.com",
     projectId: "autodoc-9a334",
-    storageBucket: "autodoc-9a334.appspot.com",
+    storageBucket: "autodoc-9a334.firebasestorage.app",
     messagingSenderId: "973075003281",
     appId: "1:973075003281:web:95a5149a4476e0bed2cc30",
     measurementId: "G-F150YMQ7GN"
-};
+  };
 
 // Initialize Firebase
 let app;
